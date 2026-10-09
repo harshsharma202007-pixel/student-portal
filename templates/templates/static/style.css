@@ -1,0 +1,298 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  }
+
+body {
+font-family: Arial, sans-serif;
+background: linear-gradient(135deg, #e0e7ff, #fce7f3, #cffafe);
+color: #1e293b;
+min-height: 100vh;
+}
+
+/* Login Page */
+
+.login-container {
+min-height: 100vh;
+display: flex;
+justify-content: center;
+align-items: center;
+padding: 20px;
+}
+
+.login-card {
+width: 100%;
+max-width: 420px;
+background: #ffffff;
+padding: 35px 30px;
+border-radius: 22px;
+text-align: center;
+box-shadow: 0 15px 45px rgba(79, 70, 229, 0.18);
+}
+
+.logo {
+font-size: 50px;
+margin-bottom: 12px;
+}
+
+.login-card h1 {
+color: #4338ca;
+margin-bottom: 10px;
+}
+
+.subtitle {
+color: #64748b;
+font-size: 14px;
+margin-bottom: 25px;
+}
+
+form {
+text-align: left;
+}
+
+label {
+display: block;
+font-size: 14px;
+font-weight: bold;
+margin: 15px 0 7px;
+}
+
+input {
+width: 100%;
+padding: 13px;
+border: 1px solid #cbd5e1;
+border-radius: 9px;
+font-size: 15px;
+}
+
+input:focus {
+outline: 2px solid #818cf8;
+border-color: #4f46e5;
+}
+
+button {
+width: 100%;
+padding: 14px;
+margin-top: 22px;
+border: none;
+border-radius: 9px;
+background: linear-gradient(90deg, #4f46e5, #7c3aed);
+color: white;
+font-size: 16px;
+font-weight: bold;
+cursor: pointer;
+}
+
+button:hover {
+opacity: 0.9;
+}
+
+.demo-info {
+margin-top: 22px;
+padding: 14px;
+background: #eef2ff;
+color: #3730a3;
+border-radius: 10px;
+font-size: 13px;
+line-height: 1.8;
+}
+
+.error-message {
+background: #fee2e2;
+color: #b91c1c;
+padding: 12px;
+margin-bottom: 15px;
+border-radius: 8px;
+}
+
+.footer-text {
+margin-top: 24px;
+color: #94a3b8;
+font-size: 12px;
+}
+
+/* Dashboard Header */
+
+.topbar {
+background: linear-gradient(90deg, #4338ca, #7c3aed);
+color: white;
+padding: 20px 6%;
+display: flex;
+justify-content: space-between;
+align-items: center;
+gap: 15px;
+}
+
+.topbar h2 {
+margin-bottom: 5px;
+}
+
+.topbar p {
+font-size: 13px;
+opacity: 0.9;
+}
+
+.logout-btn {
+display: inline-block;
+background: white;
+color: #4338ca;
+padding: 10px 18px;
+border-radius: 8px;
+text-decoration: none;
+font-size: 14px;
+font-weight: bold;
+}
+
+/* Main Dashboard */
+
+.dashboard {
+max-width: 1000px;
+margin: 35px auto;
+padding: 0 20px;
+}
+
+.welcome-card {
+background: linear-gradient(120deg, #4f46e5, #8b5cf6);
+color: white;
+padding: 30px;
+border-radius: 18px;
+margin-bottom: 25px;
+box-shadow: 0 10px 25px rgba(79, 70, 229, 0.18);
+}
+
+.welcome-card h1 {
+font-size: 27px;
+margin-bottom: 12px;
+}
+
+.welcome-card p {
+line-height: 1.6;
+}
+
+.profile-card {
+background: white;
+padding: 25px;
+border-radius: 18px;
+margin-bottom: 25px;
+box-shadow: 0 8px 25px rgba(15, 23, 42, 0.06);
+}
+
+.profile-card h2 {
+color: #4338ca;
+margin-bottom: 20px;
+}
+
+.profile-row {
+display: flex;
+justify-content: space-between;
+gap: 15px;
+padding: 15px 0;
+border-bottom: 1px solid #e2e8f0;
+overflow-wrap: anywhere;
+}
+
+.profile-row:last-child {
+border-bottom: none;
+}
+
+.profile-row span {
+color: #64748b;
+}
+
+.profile-row strong {
+text-align: right;
+}
+
+/* Marks and Attendance Cards */
+
+.stats-grid {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 20px;
+}
+
+.stat-card {
+background: white;
+padding: 25px;
+border-radius: 18px;
+text-align: center;
+box-shadow: 0 8px 25px rgba(15, 23, 42, 0.06);
+}
+
+.stat-icon {
+font-size: 38px;
+margin-bottom: 12px;
+}
+
+.stat-card h3 {
+color: #475569;
+font-size: 16px;
+}
+
+.stat-number {
+font-size: 34px;
+font-weight: bold;
+margin-top: 15px;
+}
+
+.marks-card .stat-number {
+color: #4f46e5;
+}
+
+.attendance-card .stat-number {
+color: #0891b2;
+}
+
+.dashboard-footer {
+text-align: center;
+color: #64748b;
+font-size: 13px;
+padding: 30px 10px;
+}
+
+/* Mobile Responsive Design */
+
+@media (max-width: 600px) {
+.login-card {
+padding: 28px 20px;
+}
+
+.topbar {
+    padding: 18px;
+}
+
+.topbar h2 {
+    font-size: 18px;
+}
+
+.logout-btn {
+    padding: 9px 12px;
+}
+
+.dashboard {
+    margin-top: 20px;
+    padding: 0 14px;
+}
+
+.welcome-card {
+    padding: 22px;
+}
+
+.welcome-card h1 {
+    font-size: 22px;
+}
+
+.profile-card {
+    padding: 20px 16px;
+}
+
+.profile-row {
+    font-size: 13px;
+}
+
+.stats-grid {
+    grid-template-columns: 1fr;
+}
+
+}
