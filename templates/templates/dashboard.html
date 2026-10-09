@@ -1,0 +1,65 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="topbar">
+        <div>
+            <h2>🎓 Student Portal</h2>
+            <p>Student Profile Management</p>
+        </div>
+        <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+    </header><main class="dashboard">
+    <section class="welcome-card">
+        <h1>Welcome, {{ student['name'] }}! 👋</h1>
+        <p>Here is your personal academic dashboard.</p>
+    </section>
+
+    <section class="profile-card">
+        <h2>👤 Student Profile</h2>
+
+        <div class="profile-row">
+            <span>Full Name</span>
+            <strong>{{ student['name'] }}</strong>
+        </div>
+
+        <div class="profile-row">
+            <span>Roll Number</span>
+            <strong>{{ student['roll_no'] }}</strong>
+        </div>
+
+        <div class="profile-row">
+            <span>Department</span>
+            <strong>{{ student['department'] }}</strong>
+        </div>
+
+        <div class="profile-row">
+            <span>Email</span>
+            <strong>{{ student['email'] }}</strong>
+        </div>
+    </section>
+
+    <section class="stats-grid">
+        <div class="stat-card marks-card">
+            <div class="stat-icon">📚</div>
+            <h3>Academic Marks</h3>
+            <p class="stat-number">{{ student['marks'] }}%</p>
+        </div>
+
+        <div class="stat-card attendance-card">
+            <div class="stat-icon">📅</div>
+            <h3>Attendance</h3>
+            <p class="stat-number">{{ student['attendance'] }}%</p>
+        </div>
+    </section>
+
+    <footer class="dashboard-footer">
+        Student Profile Management System · 2026
+    </footer>
+</main>
+
+</body>
+</html>
