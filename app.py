@@ -51,7 +51,11 @@ def init_db():
                                attendance, academic_score, role)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'teacher')
         """, ("teacher@gmail.com", generate_password_hash("Teacher@123"),
-              "Demo Teacher", "-", "-", "-", 0, 0))
+              "Demo Teacher", "-", "-", "-", 0, 0)
+                           cursor.execute(
+        "UPDATE users SET role = 'teacher' WHERE email = ?",
+        ("teacher@gmail.com",)
+                           )
 
     conn.commit()
     conn.close()
