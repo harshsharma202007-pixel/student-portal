@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
 from functools import wraps
 
