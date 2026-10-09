@@ -55,7 +55,7 @@ def init_db():
                            cursor.execute(
         "UPDATE users SET role = 'teacher' WHERE email = ?",
         ("teacher@gmail.com",)
-                           )
+                           ) )
 
     conn.commit()
     conn.close()
