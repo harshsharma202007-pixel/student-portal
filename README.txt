@@ -2,7 +2,8 @@ STUDENT ACADEMIC MANAGEMENT SYSTEM
 
 Technology:
 - Python
-- Flask
+- Flask 
+- gunicorn 
 - SQLite
 - HTML
 - CSS
