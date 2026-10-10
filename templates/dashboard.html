@@ -85,5 +85,28 @@
             </div>
         </div>
     </div>
+    <div style="background:#fff;border-radius:20px;padding:22px;margin:20px 0;box-shadow:0 4px 15px rgba(0,0,0,.06)">
+  <h3 style="font-size:18px;margin-bottom:14px">📚 Subject-wise Report</h3>
+  {% for s in subjects %}
+  <div style="margin-bottom:18px">
+    <div style="font-weight:600;margin-bottom:8px">{{ s['subject_name'] }}</div>
+    <div style="font-size:12px;color:#64748b;display:flex;justify-content:space-between">
+      <span>Attendance</span>
+      <b style="color:{{ '#b91c1c' if s['attendance'] < 75 else '#1e293b' }}">{{ s['attendance'] }}%</b>
+    </div>
+    <div style="height:10px;background:#e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px">
+      <div style="height:100%;width:{{ s['attendance'] }}%;background:{{ '#ef4444' if s['attendance'] < 75 else '#10b981' }}"></div>
+    </div>
+    <div style="font-size:12px;color:#64748b;display:flex;justify-content:space-between">
+      <span>Marks</span><b style="color:#1e293b">{{ s['marks'] }}%</b>
+    </div>
+    <div style="height:10px;background:#e2e8f0;border-radius:10px;overflow:hidden">
+      <div style="height:100%;width:{{ s['marks'] }}%;background:#3b82f6"></div>
+    </div>
+  </div>
+  {% else %}
+  <p style="color:#64748b;font-size:14px">Abhi koi subject add nahi hua hai.</p>
+  {% endfor %}
+    </div>
 </body>
 </html>
