@@ -5,66 +5,65 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'supersecretstudentportalkey2026')
-
 DB_PATH = os.environ.get('DATABASE_PATH', os.path.join(app.root_path, 'student_portal.db'))
+
+INSERT_SQL = ("INSERT INTO users (email, password, name, roll_number, course, "
+              "semester, attendance, academic_score, role) "
+              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
+
 def init_db():
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            name TEXT NOT NULL,
-            roll_number TEXT NOT NULL,
-            course TEXT NOT NULL,
-            semester TEXT NOT NULL,
-            attendance REAL NOT NULL,
-            academic_score REAL NOT NULL
-        )
-    """)
+    cur = conn.cursor()
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS users ("
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "email TEXT UNIQUE NOT NULL, "
+        "password TEXT NOT NULL, "
+        "name TEXT NOT NULL, "
+        "roll_number TEXT NOT NULL, "
+        "course TEXT NOT NULL, "
+        "semester TEXT NOT NULL, "
+        "attendance REAL NOT NULL, "
+        "academic_score REAL NOT NULL)"
+    )
 
-    # Purani table mein role column add karo (agar nahi hai)
-    cols = [c['name'] for c in cursor.execute("PRAGMA table_info(users)").fetchall()]
+    cols = [c['name'] for c in cur.execute("PRAGMA table_info(users)").fetchall()]
     if 'role' not in cols:
-        cursor.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'student'")
+        cur.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'student'")
 
-    # Demo student
-    if not cursor.execute("SELECT 1 FROM users WHERE email = ?", ("student@gmail.com",)).fetchone():
-        cursor.execute("""
-            INSERT INTO users (email, password, name, roll_number, course, semester,
-                               attendance, academic_score, role)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'student')
-        """, ("student@gmail.com", generate_password_hash("Student@123"),
-              "Demo Student", "ITS2026-001", "B.Tech CSE Core", "3rd Semester", 86.5, 78.0))
+    s = cur.execute("SELECT 1 FROM users WHERE email = ?", ("student@gmail.com",)).fetchone()
+    if not s:
+        cur.execute(INSERT_SQL, ("student@gmail.com", generate_password_hash("Student@123"),
+                                 "Demo Student", "ITS2026-001", "B.Tech CSE Core",
+                                 "3rd Semester", 86.5, 78.0, "student"))
 
-    # Demo teacher
-    if not cursor.execute("SELECT 1 FROM users WHERE email = ?", ("teacher@gmail.com",)).fetchone():
-        cursor.execute("""
-            INSERT INTO users (email, password, name, roll_number, course, semester,
-                               attendance, academic_score, role)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'teacher')
-        """, ("teacher@gmail.com", generate_password_hash("Teacher@123"),
-              "Demo Teacher", "-", "-", "-", 0, 0)
-                           cursor.execute(
-        "UPDATE users SET role = 'teacher' WHERE email = ?",
-        ("teacher@gmail.com",)
-                           ) )
+    t_hash = generate_password_hash("Teacher@123")
+    t = cur.execute("SELECT 1 FROM users WHERE email = ?", ("teacher@gmail.com",)).fetchone()
+    if t:
+        cur.execute("UPDATE users SET password = ?, role = 'teacher' WHERE email = ?",
+                    (t_hash, "teacher@gmail.com"))
+    else:
+        cur.execute(INSERT_SQL, ("teacher@gmail.com", t_hash, "Demo Teacher",
+                                 "-", "-", "-", 0, 0, "teacher"))
 
     conn.commit()
     conn.close()
 
+
 with app.app_context():
     init_db()
 
+
 def home_for(role):
     return url_for('teacher') if role == 'teacher' else url_for('dashboard')
+
 
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/login', methods=['GET', 'POST'])
@@ -94,6 +93,7 @@ def login():
 
     return render_template('login.html')
 
+
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
@@ -112,6 +112,7 @@ def dashboard():
         return redirect(url_for('login'))
     return render_template('dashboard.html', user=user)
 
+
 def teacher_only():
     if 'user_id' not in session:
         flash('Pehle login karein.', 'error')
@@ -120,6 +121,7 @@ def teacher_only():
         flash('Ye page sirf teacher ke liye hai.', 'error')
         return redirect(url_for('dashboard'))
     return None
+
 
 @app.route('/teacher')
 def teacher():
@@ -131,6 +133,7 @@ def teacher():
         "SELECT * FROM users WHERE role = 'student' ORDER BY id DESC").fetchall()
     conn.close()
     return render_template('teacher.html', students=students)
+
 
 @app.route('/teacher/add', methods=['POST'])
 def add_student():
@@ -162,19 +165,16 @@ def add_student():
 
     conn = get_db_connection()
     try:
-        conn.execute("""
-            INSERT INTO users (email, password, name, roll_number, course, semester,
-                               attendance, academic_score, role)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'student')
-        """, (email, generate_password_hash(password), name, roll_number,
-              course, semester, attendance, score))
+        conn.execute(INSERT_SQL, (email, generate_password_hash(password), name,
+                                  roll_number, course, semester, attendance, score, 'student'))
         conn.commit()
-        flash(f'{name} ko add kar diya gaya.', 'success')
+        flash(name + ' ko add kar diya gaya.', 'success')
     except sqlite3.IntegrityError:
         flash('Ye email pehle se maujood hai.', 'error')
     finally:
         conn.close()
     return redirect(url_for('teacher'))
+
 
 @app.route('/teacher/delete/<int:student_id>', methods=['POST'])
 def delete_student(student_id):
@@ -188,11 +188,13 @@ def delete_student(student_id):
     flash('Student delete ho gaya.', 'success')
     return redirect(url_for('teacher'))
 
+
 @app.route('/logout')
 def logout():
     session.clear()
     flash('Aap successfully logout ho chuke hain.', 'success')
     return redirect(url_for('login'))
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
