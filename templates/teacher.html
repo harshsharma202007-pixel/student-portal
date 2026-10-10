@@ -56,10 +56,6 @@ th{color:#64748b;font-size:12px;text-transform:uppercase}
       </div>
       <label>Course</label>
       <input name="course" placeholder="B.Tech CSE Core" required>
-      <div class="row">
-        <div><label>Attendance %</label><input type="number" step="0.1" min="0" max="100" name="attendance" required></div>
-        <div><label>Academic Score %</label><input type="number" step="0.1" min="0" max="100" name="academic_score" required></div>
-      </div>
       <button class="add" type="submit">Add Student</button>
     </form>
   </div>
@@ -68,15 +64,17 @@ th{color:#64748b;font-size:12px;text-transform:uppercase}
     <h2>📋 Students ({{ students|length }})</h2>
     <div class="scroll">
       <table>
-        <tr><th>Name</th><th>Roll No</th><th>Course</th><th>Att.</th><th>Score</th><th></th></tr>
+                <tr><th>Name</th><th>Roll No</th><th>Course</th><th>Subjects</th><th>Att.</th><th>Score</th><th></th></tr>
         {% for s in students %}
         <tr>
           <td>{{ s['name'] }}<br><small>{{ s['email'] }}</small></td>
           <td>{{ s['roll_number'] }}</td>
           <td>{{ s['course'] }}<br><small>{{ s['semester'] }}</small></td>
+                    <td>{{ s['subject_count'] }}</td>
           <td>{{ s['attendance'] }}%</td>
           <td>{{ s['academic_score'] }}%</td>
           <td>
+                        <a href="{{ url_for('student_subjects', student_id=s['id']) }}" style="background:#e0e7ff;color:#3730a3;padding:6px 12px;border-radius:8px;font-weight:600;font-size:13px;text-decoration:none;display:inline-block;margin-bottom:6px">Subjects</a>
             <form method="POST" action="{{ url_for('delete_student', student_id=s['id']) }}"
                   onsubmit="return confirm('Is student ko delete karein?')">
               <button class="del" type="submit">Delete</button>
@@ -84,7 +82,7 @@ th{color:#64748b;font-size:12px;text-transform:uppercase}
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="6">Abhi koi student nahi hai.</td></tr>
+        <tr><td colspan="7">Abhi koi student nahi hai.</td></tr>
         {% endfor %}
       </table>
     </div>
