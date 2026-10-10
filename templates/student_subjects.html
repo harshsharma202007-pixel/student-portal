@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subjects - {{ student['name'] }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
+body{background:#f1f5f9;color:#1e293b}
+.nav{background:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.nav h1{font-size:18px;color:#4f46e5}
+.logout{background:#ef4444;color:#fff;padding:10px 16px;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px}
+.wrap{padding:20px;max-width:900px;margin:auto}
+.back{display:inline-block;margin-bottom:14px;color:#4f46e5;text-decoration:none;font-weight:600;font-size:14px}
+.card{background:#fff;border-radius:18px;padding:20px;margin-bottom:20px;box-shadow:0 4px 15px rgba(0,0,0,.06)}
+.card h2{font-size:17px;margin-bottom:6px}
+.sub{color:#64748b;font-size:13px;margin-bottom:14px}
+.msg{padding:12px 14px;border-radius:10px;margin-bottom:14px;font-size:14px}
+.msg.success{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.msg.error{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+label{display:block;font-size:13px;font-weight:600;margin:10px 0 5px}
+input{width:100%;padding:11px 12px;border:2px solid #e2e8f0;border-radius:10px;font-size:15px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button.add{width:100%;margin-top:16px;padding:13px;border:0;border-radius:12px;color:#fff;font-weight:600;font-size:16px;background:linear-gradient(135deg,#4f46e5,#7c3aed)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:420px}
+th,td{padding:10px 8px;text-align:left;border-bottom:1px solid #e2e8f0;vertical-align:middle}
+th{color:#64748b;font-size:12px;text-transform:uppercase}
+.low{color:#b91c1c;font-weight:600}
+.del{background:#fee2e2;color:#b91c1c;border:0;padding:6px 12px;border-radius:8px;font-weight:600}
+.note{font-size:12px;color:#64748b;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="nav">
+  <h1>👩‍🏫 Teacher Panel</h1>
+  <a class="logout" href="{{ url_for('logout') }}">Logout</a>
+</div>
+
+<div class="wrap">
+  <a class="back" href="{{ url_for('teacher') }}">← Students list par wapas</a>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="msg {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="card">
+    <h2>{{ student['name'] }}</h2>
+    <p class="sub">{{ student['roll_number'] }} | {{ student['course'] }} | {{ student['semester'] }}</p>
+    <p class="sub">Overall Attendance: <b>{{ student['attendance'] }}%</b> &nbsp;|&nbsp; Overall Score: <b>{{ student['academic_score'] }}%</b></p>
+  </div>
+
+  <div class="card">
+    <h2>➕ Subject Add / Update</h2>
+    <form method="POST" action="{{ url_for('save_subject', student_id=student['id']) }}">
+      <label>Subject Name</label>
+      <input name="subject_name" placeholder="Data Structures" required>
+      <div class="row">
+        <div><label>Attendance %</label><input type="number" step="0.1" min="0" max="100" name="attendance" required></div>
+        <div><label>Marks %</label><input type="number" step="0.1" min="0" max="100" name="marks" required></div>
+      </div>
+      <button class="add" type="submit">Save Subject</button>
+    </form>
+    <p class="note">Same naam ka subject dobara save karne par uske attendance aur marks update ho jate hain.</p>
+  </div>
+
+  <div class="card">
+    <h2>📚 Subjects ({{ subjects|length }})</h2>
+    <div class="scroll">
+      <table>
+        <tr><th>Subject</th><th>Attendance</th><th>Marks</th><th></th></tr>
+        {% for sub in subjects %}
+        <tr>
+          <td>{{ sub['subject_name'] }}</td>
+          <td class="{{ 'low' if sub['attendance'] < 75 else '' }}">{{ sub['attendance'] }}%</td>
+          <td>{{ sub['marks'] }}%</td>
+          <td>
+            <form method="POST" action="{{ url_for('delete_subject', subject_id=sub['id']) }}"
+                  onsubmit="return confirm('Ye subject delete karein?')">
+              <button class="del" type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4">Abhi koi subject add nahi hua.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>
