@@ -89,7 +89,7 @@ def login():
             session['role'] = user['role']
             flash('Login successful! Welcome back.', 'success')
             return redirect(home_for(user['role']))
-        flash('Galat email ya password. Kripya phir se koshish karein.', 'error')
+        flash('unsuccessful.', 'error')
 
     return render_template('login.html')
 
@@ -97,7 +97,7 @@ def login():
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
-        flash('Dashboard access karne ke liye pehle login karein.', 'error')
+        flash('Dashboard access firstly login.', 'error')
         return redirect(url_for('login'))
     if session.get('role') == 'teacher':
         return redirect(url_for('teacher'))
@@ -108,17 +108,17 @@ def dashboard():
 
     if not user:
         session.clear()
-        flash('User account nahi mila. Kripya login karein.', 'error')
+        flash('User account not found. try to login.', 'error')
         return redirect(url_for('login'))
     return render_template('dashboard.html', user=user)
 
 
 def teacher_only():
     if 'user_id' not in session:
-        flash('Pehle login karein.', 'error')
+        flash('firstly login your account.', 'error')
         return redirect(url_for('login'))
     if session.get('role') != 'teacher':
-        flash('Ye page sirf teacher ke liye hai.', 'error')
+        flash('this page only for teachers.', 'error')
         return redirect(url_for('dashboard'))
     return None
 
@@ -153,11 +153,11 @@ def add_student():
         attendance = float(f.get('attendance', ''))
         score = float(f.get('academic_score', ''))
     except ValueError:
-        flash('Attendance aur score number hone chahiye.', 'error')
+        flash('Attendance aur score are necessary.', 'error')
         return redirect(url_for('teacher'))
 
     if not all([name, email, password, roll_number, course, semester]):
-        flash('Saari fields bharna zaroori hai.', 'error')
+        flash('all information have to filup.', 'error')
         return redirect(url_for('teacher'))
     if not (0 <= attendance <= 100 and 0 <= score <= 100):
         flash('Attendance aur score 0 se 100 ke beech hone chahiye.', 'error')
@@ -168,9 +168,9 @@ def add_student():
         conn.execute(INSERT_SQL, (email, generate_password_hash(password), name,
                                   roll_number, course, semester, attendance, score, 'student'))
         conn.commit()
-        flash(name + ' ko add kar diya gaya.', 'success')
+        flash(name + ' add successfully.', 'success')
     except sqlite3.IntegrityError:
-        flash('Ye email pehle se maujood hai.', 'error')
+        flash('this email already available.', 'error')
     finally:
         conn.close()
     return redirect(url_for('teacher'))
@@ -185,14 +185,14 @@ def delete_student(student_id):
     conn.execute("DELETE FROM users WHERE id = ? AND role = 'student'", (student_id,))
     conn.commit()
     conn.close()
-    flash('Student delete ho gaya.', 'success')
+    flash('Student get deleted.', 'success')
     return redirect(url_for('teacher'))
 
 
 @app.route('/logout')
 def logout():
     session.clear()
-    flash('Aap successfully logout ho chuke hain.', 'success')
+    flash('successfully logout.', 'success')
     return redirect(url_for('login'))
 
 
