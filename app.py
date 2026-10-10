@@ -1,6 +1,7 @@
 import os
 import sqlite3
-from flask import Flask, render_template, request, redirect, url_for, session, flash, abort 
+from flask import (Flask, render_template, request, redirect, url_for,
+                   session, flash, abort)
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -32,15 +33,15 @@ def init_db():
         "semester TEXT NOT NULL, "
         "attendance REAL NOT NULL, "
         "academic_score REAL NOT NULL)"
-      )
-        cur.execute(
+    )
+    cur.execute(
         "CREATE TABLE IF NOT EXISTS subjects ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "student_id INTEGER NOT NULL, "
         "subject_name TEXT NOT NULL, "
         "attendance REAL NOT NULL, "
         "marks REAL NOT NULL)"
-        )
+    )
 
     cols = [c['name'] for c in cur.execute("PRAGMA table_info(users)").fetchall()]
     if 'role' not in cols:
@@ -67,7 +68,10 @@ def init_db():
 
 with app.app_context():
     init_db()
+
+
 def recalc_overall(conn, student_id):
+    """Overall attendance aur score ko subjects ke average se update karta hai."""
     row = conn.execute(
         "SELECT AVG(attendance) AS a, AVG(marks) AS m, COUNT(*) AS n "
         "FROM subjects WHERE student_id = ?", (student_id,)).fetchone()
@@ -107,7 +111,7 @@ def login():
             session['role'] = user['role']
             flash('Login successful! Welcome back.', 'success')
             return redirect(home_for(user['role']))
-        flash('unsuccessful.', 'error')
+        flash('Galat email ya password. Kripya phir se koshish karein.', 'error')
 
     return render_template('login.html')
 
@@ -115,7 +119,7 @@ def login():
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
-        flash('Dashboard access firstly login.', 'error')
+        flash('Dashboard access karne ke liye pehle login karein.', 'error')
         return redirect(url_for('login'))
     if session.get('role') == 'teacher':
         return redirect(url_for('teacher'))
@@ -129,19 +133,34 @@ def dashboard():
 
     if not user:
         session.clear()
-        flash('User account not found. try to login.', 'error')
+        flash('User account nahi mila. Kripya login karein.', 'error')
         return redirect(url_for('login'))
-    return render_template('dashboard.html', user=user,subjects=subjects)
+    return render_template('dashboard.html', user=user, subjects=subjects)
 
 
 def teacher_only():
     if 'user_id' not in session:
-        flash('firstly login your account.', 'error')
+        flash('Pehle login karein.', 'error')
         return redirect(url_for('login'))
     if session.get('role') != 'teacher':
-        flash('this page only for teachers.', 'error')
+        flash('Ye page sirf teacher ke liye hai.', 'error')
         return redirect(url_for('dashboard'))
     return None
+
+
+@app.route('/teacher')
+def teacher():
+    blocked = teacher_only()
+    if blocked:
+        return blocked
+    conn = get_db_connection()
+    students = conn.execute(
+        "SELECT u.*, (SELECT COUNT(*) FROM subjects s WHERE s.student_id = u.id) AS subject_count "
+        "FROM users u WHERE u.role = 'student' ORDER BY u.id DESC").fetchall()
+    conn.close()
+    return render_template('teacher.html', students=students)
+
+
 @app.route('/teacher/add', methods=['POST'])
 def add_student():
     blocked = teacher_only()
@@ -174,20 +193,6 @@ def add_student():
     flash(name + ' add ho gaya. Ab iske subjects add karein.', 'success')
     return redirect(url_for('student_subjects', student_id=new_id))
 
-
-
-
-    conn = get_db_connection()
-    try:
-        conn.execute(INSERT_SQL, (email, generate_password_hash(password), name,
-                                  roll_number, course, semester, attendance, score, 'student'))
-        conn.commit()
-        flash(name + ' add successfully.', 'success')
-    except sqlite3.IntegrityError:
-        flash('this email already available.', 'error')
-    finally:
-        conn.close()
-    return redirect(url_for('teacher'))
 
 @app.route('/teacher/student/<int:student_id>')
 def student_subjects(student_id):
@@ -268,6 +273,8 @@ def delete_subject(subject_id):
     conn.close()
     flash('Subject delete ho gaya.', 'success')
     return redirect(url_for('student_subjects', student_id=row['student_id']))
+
+
 @app.route('/teacher/delete/<int:student_id>', methods=['POST'])
 def delete_student(student_id):
     blocked = teacher_only()
@@ -278,14 +285,14 @@ def delete_student(student_id):
     conn.execute("DELETE FROM users WHERE id = ? AND role = 'student'", (student_id,))
     conn.commit()
     conn.close()
-    flash('Student get deleted.', 'success')
+    flash('Student delete ho gaya.', 'success')
     return redirect(url_for('teacher'))
 
 
 @app.route('/logout')
 def logout():
     session.clear()
-    flash('successfully logout.', 'success')
+    flash('Aap successfully logout ho chuke hain.', 'success')
     return redirect(url_for('login'))
 
 
