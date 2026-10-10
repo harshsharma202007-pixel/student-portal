@@ -72,7 +72,7 @@ def login():
         return redirect(home_for(session.get('role')))
 
     if request.method == 'POST':
-        email = request.form.get('email', '').strip()
+        email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '').strip()
 
         if not email or not password:
