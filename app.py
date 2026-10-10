@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash abort 
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -32,7 +32,15 @@ def init_db():
         "semester TEXT NOT NULL, "
         "attendance REAL NOT NULL, "
         "academic_score REAL NOT NULL)"
-    )
+      )
+        cur.execute(
+        "CREATE TABLE IF NOT EXISTS subjects ("
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "student_id INTEGER NOT NULL, "
+        "subject_name TEXT NOT NULL, "
+        "attendance REAL NOT NULL, "
+        "marks REAL NOT NULL)"
+        )
 
     cols = [c['name'] for c in cur.execute("PRAGMA table_info(users)").fetchall()]
     if 'role' not in cols:
@@ -59,6 +67,16 @@ def init_db():
 
 with app.app_context():
     init_db()
+def recalc_overall(conn, student_id):
+    row = conn.execute(
+        "SELECT AVG(attendance) AS a, AVG(marks) AS m, COUNT(*) AS n "
+        "FROM subjects WHERE student_id = ?", (student_id,)).fetchone()
+    if row['n']:
+        conn.execute("UPDATE users SET attendance = ?, academic_score = ? WHERE id = ?",
+                     (round(row['a'], 1), round(row['m'], 1), student_id))
+    else:
+        conn.execute("UPDATE users SET attendance = 0, academic_score = 0 WHERE id = ?",
+                     (student_id,))
 
 
 def home_for(role):
@@ -104,13 +122,16 @@ def dashboard():
 
     conn = get_db_connection()
     user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
+    subjects = conn.execute(
+        "SELECT * FROM subjects WHERE student_id = ? ORDER BY subject_name",
+        (session['user_id'],)).fetchall()
     conn.close()
 
     if not user:
         session.clear()
         flash('User account not found. try to login.', 'error')
         return redirect(url_for('login'))
-    return render_template('dashboard.html', user=user)
+    return render_template('dashboard.html', user=user,subjects=subjects)
 
 
 def teacher_only():
@@ -121,20 +142,6 @@ def teacher_only():
         flash('this page only for teachers.', 'error')
         return redirect(url_for('dashboard'))
     return None
-
-
-@app.route('/teacher')
-def teacher():
-    blocked = teacher_only()
-    if blocked:
-        return blocked
-    conn = get_db_connection()
-    students = conn.execute(
-        "SELECT * FROM users WHERE role = 'student' ORDER BY id DESC").fetchall()
-    conn.close()
-    return render_template('teacher.html', students=students)
-
-
 @app.route('/teacher/add', methods=['POST'])
 def add_student():
     blocked = teacher_only()
@@ -143,25 +150,32 @@ def add_student():
 
     f = request.form
     name = f.get('name', '').strip()
-    email = f.get('email', '').strip()
+    email = f.get('email', '').strip().lower()
     password = f.get('password', '').strip()
     roll_number = f.get('roll_number', '').strip()
     course = f.get('course', '').strip()
     semester = f.get('semester', '').strip()
 
-    try:
-        attendance = float(f.get('attendance', ''))
-        score = float(f.get('academic_score', ''))
-    except ValueError:
-        flash('Attendance aur score are necessary.', 'error')
+    if not all([name, email, password, roll_number, course, semester]):
+        flash('Saari fields bharna zaroori hai.', 'error')
         return redirect(url_for('teacher'))
 
-    if not all([name, email, password, roll_number, course, semester]):
-        flash('all information have to filup.', 'error')
+    conn = get_db_connection()
+    try:
+        cur = conn.execute(INSERT_SQL, (email, generate_password_hash(password), name,
+                                        roll_number, course, semester, 0, 0, 'student'))
+        conn.commit()
+        new_id = cur.lastrowid
+    except sqlite3.IntegrityError:
+        conn.close()
+        flash('Ye email pehle se maujood hai.', 'error')
         return redirect(url_for('teacher'))
-    if not (0 <= attendance <= 100 and 0 <= score <= 100):
-        flash('Attendance aur score 0 se 100 ke beech hone chahiye.', 'error')
-        return redirect(url_for('teacher'))
+    conn.close()
+    flash(name + ' add ho gaya. Ab iske subjects add karein.', 'success')
+    return redirect(url_for('student_subjects', student_id=new_id))
+
+
+
 
     conn = get_db_connection()
     try:
@@ -175,13 +189,92 @@ def add_student():
         conn.close()
     return redirect(url_for('teacher'))
 
+@app.route('/teacher/student/<int:student_id>')
+def student_subjects(student_id):
+    blocked = teacher_only()
+    if blocked:
+        return blocked
+    conn = get_db_connection()
+    student = conn.execute("SELECT * FROM users WHERE id = ? AND role = 'student'",
+                           (student_id,)).fetchone()
+    if not student:
+        conn.close()
+        abort(404)
+    subjects = conn.execute(
+        "SELECT * FROM subjects WHERE student_id = ? ORDER BY subject_name",
+        (student_id,)).fetchall()
+    conn.close()
+    return render_template('student_subjects.html', student=student, subjects=subjects)
 
+
+@app.route('/teacher/student/<int:student_id>/subject', methods=['POST'])
+def save_subject(student_id):
+    blocked = teacher_only()
+    if blocked:
+        return blocked
+
+    subject_name = request.form.get('subject_name', '').strip()
+    try:
+        attendance = float(request.form.get('attendance', ''))
+        marks = float(request.form.get('marks', ''))
+    except ValueError:
+        flash('Attendance aur marks number hone chahiye.', 'error')
+        return redirect(url_for('student_subjects', student_id=student_id))
+
+    if not subject_name:
+        flash('Subject ka naam likhna zaroori hai.', 'error')
+        return redirect(url_for('student_subjects', student_id=student_id))
+    if not (0 <= attendance <= 100 and 0 <= marks <= 100):
+        flash('Attendance aur marks 0 se 100 ke beech hone chahiye.', 'error')
+        return redirect(url_for('student_subjects', student_id=student_id))
+
+    conn = get_db_connection()
+    student = conn.execute("SELECT id FROM users WHERE id = ? AND role = 'student'",
+                           (student_id,)).fetchone()
+    if not student:
+        conn.close()
+        abort(404)
+
+    existing = conn.execute(
+        "SELECT id FROM subjects WHERE student_id = ? AND LOWER(subject_name) = LOWER(?)",
+        (student_id, subject_name)).fetchone()
+    if existing:
+        conn.execute("UPDATE subjects SET attendance = ?, marks = ? WHERE id = ?",
+                     (attendance, marks, existing['id']))
+        flash(subject_name + ' update ho gaya.', 'success')
+    else:
+        conn.execute("INSERT INTO subjects (student_id, subject_name, attendance, marks) "
+                     "VALUES (?, ?, ?, ?)", (student_id, subject_name, attendance, marks))
+        flash(subject_name + ' add ho gaya.', 'success')
+    recalc_overall(conn, student_id)
+    conn.commit()
+    conn.close()
+    return redirect(url_for('student_subjects', student_id=student_id))
+
+
+@app.route('/teacher/subject/delete/<int:subject_id>', methods=['POST'])
+def delete_subject(subject_id):
+    blocked = teacher_only()
+    if blocked:
+        return blocked
+    conn = get_db_connection()
+    row = conn.execute("SELECT student_id FROM subjects WHERE id = ?", (subject_id,)).fetchone()
+    if not row:
+        conn.close()
+        abort(404)
+    conn.execute("DELETE FROM subjects WHERE id = ?", (subject_id,))
+    recalc_overall(conn, row['student_id'])
+    conn.commit()
+    conn.close()
+    flash('Subject delete ho gaya.', 'success')
+    return redirect(url_for('student_subjects', student_id=row['student_id']))
 @app.route('/teacher/delete/<int:student_id>', methods=['POST'])
 def delete_student(student_id):
     blocked = teacher_only()
     if blocked:
         return blocked
     conn = get_db_connection()
+    conn.execute("DELETE FROM subjects WHERE student_id = ?", (student_id,))
     conn.execute("DELETE FROM users WHERE id = ? AND role = 'student'", (student_id,))
     conn.commit()
     conn.close()
